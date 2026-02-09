@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaVue Side Panel</title>
+  <link rel="stylesheet" href="../popup/popup.css">
+  <style>
+    body {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      height: 100%;
+      max-height: none;
+    }
+    main {
+      max-height: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <img src="../icons/icon48.png" alt="MediaVue" class="logo">
+        <div class="title-group">
+          <h1>MediaVue</h1>
+          <span id="status" class="status-badge">Ready</span>
+        </div>
+      </div>
+      <div class="actions-group">
+        <button id="copyAllBtn" class="secondary-btn" style="display: none;">Copy All</button>
+      </div>
+    </header>
+
+    <div class="filter-bar">
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search media...">
+        <span class="search-icon">🔍</span>
+      </div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-type="all">All</button>
+        <button class="filter-tab" data-type="video">Video</button>
+        <button class="filter-tab" data-type="audio">Audio</button>
+        <button class="filter-tab" data-type="streaming">Streaming</button>
+        <button class="filter-tab" data-type="subtitle">Subs</button>
+      </div>
+    </div>
+
+    <main id="resultsList">
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <p>Click "Scan Page" to find media on this tab.</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>MediaVue v1.0.0 • Premium Edition</p>
+    </footer>
+  </div>
+
+  <template id="mediaItemTemplate">
+    <div class="media-item">
+      <div class="media-info">
+        <span class="media-type-badge"></span>
+        <div class="media-details">
+          <span class="media-url" title=""></span>
+          <span class="media-meta"></span>
+        </div>
+      </div>
+      <div class="media-actions">
+        <button class="action-btn copy-btn" title="Copy URL">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </button>
+        <button class="action-btn open-btn" title="Open in new tab">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </template>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
