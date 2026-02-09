@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "MediaVue",
+  "short_name": "MediaVue",
   "version": "1.0.0",
-  "description": "Extract video, audio, and streaming media from any webpage.",
+  "author": "MediaVue Team",
+  "description": "Professional media extraction tool. Discover, analyze, and extract video, audio, and streaming manifests (HLS/DASH) from any website",
   "permissions": [
     "activeTab",
     "scripting",

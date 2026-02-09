@@ -4,11 +4,11 @@ MediaVue is a professional media extraction tool for Chrome that identifies vide
 
 ## 🚀 Features
 
-- **🔍 Intelligent Extraction**: Finds media in `<video>`, `<audio>`, `<source>`, and `<track>` tags.
-- **🌐 Network Monitoring**: Captures high-quality streaming manifests (`.m3u8`, `.mpd`) and direct media files as they load.
-- **📋 Smart Deduplication**: Merges results from different sources and removes redundant entries.
+- **🔍 Intelligent Extraction**: Finds media in `<video>`, `<audio>`, `<source>`, and `<track>` tags using advanced DOM scanning and heuristics.
+- **🌐 Network Monitoring**: Captures high-quality streaming manifests (`.m3u8`, `.mpd`) and direct media files in real-time as they load.
+- **📋 Smart Deduplication**: Intelligently merges results from different sources and removes redundant entries to keep your list clean.
 - **⚡ Quick Actions**: One-click copy to clipboard or open in a new tab for any discovered asset.
-- **💎 Premium UI**: Modern dark-themed interface with glassmorphism and smooth animations.
+- **💎 Premium Design**: Modern dark-themed interface with glassmorphism, smooth animations, and a high-resolution squircle icon for maximum visibility.
 
 ## 🛠 Installation
 

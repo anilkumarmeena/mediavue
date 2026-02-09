@@ -140,5 +140,5 @@
     // but here we send it immediately
   });
 
-  console.log('MediaVue: Content script successfully injected and listening.');
+  // Silent injection for production
 })();

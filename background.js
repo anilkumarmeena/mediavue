@@ -19,8 +19,11 @@ chrome.runtime.onInstalled.addListener((details) => {
   
   // Configure Side Panel to open on action (icon) click
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error) => console.error('Failed to set panel behavior:', error));
+    .catch((error) => {
+      // Quiet fail if side panel behavior cannot be set (e.g. older Chrome versions)
+    });
 });
+
 
 // Listen for network requests to capture media files and manifests
 chrome.webRequest.onBeforeRequest.addListener(
