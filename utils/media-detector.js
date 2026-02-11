@@ -22,3 +22,18 @@ export function getMediaType(url) {
 export function isMediaUrl(url) {
   return getMediaType(url) !== 'unknown';
 }
+
+/**
+ * Checks if a URL is a protected browser page (chrome://, about:, etc.)
+ * where content scripts cannot be injected.
+ */
+export function isProtectedUrl(url) {
+  if (!url) return true;
+  return (
+    url.startsWith('chrome://') ||
+    url.startsWith('chrome-extension://') ||
+    url.startsWith('edge://') ||
+    url.startsWith('about:') ||
+    url.startsWith('view-source:')
+  );
+}

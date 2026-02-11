@@ -1,4 +1,4 @@
-import { isMediaUrl, getMediaType, getHlsType } from './utils/media-detector.js';
+import { isMediaUrl, getMediaType, getHlsType, isProtectedUrl } from './utils/media-detector.js';
 
 // Cache for media URLs captured from network requests, keyed by tabId
 const tabMediaCache = new Map();
@@ -82,30 +82,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return;
     }
 
-    // Step 1: Inject content script dynamically
-    chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ['content.js']
-    })
-    .then(() => {
-      // Step 2: Request DOM extraction from the injected content script
-      chrome.tabs.sendMessage(tabId, { action: 'extract_dom_media' }, (domMedia) => {
-        // If message fails (e.g. content script didn't load in time), fall back to empty list
-        const domResults = domMedia || [];
-        const networkResults = tabMediaCache.get(tabId) || [];
-        
-        // Step 3: Merge and deduplicate results
-        const combined = mergeAndDeduplicate(domResults, networkResults);
-        
-        // Step 4: Enrich visible results with metadata (sizes)
-        enrichResults(combined).then(enriched => {
-          sendResponse({ results: enriched });
+    // Step 1: Check if the URL is protected
+    chrome.tabs.get(tabId, (tab) => {
+      if (chrome.runtime.lastError || !tab) {
+        sendResponse({ error: 'Unable to access tab information.' });
+        return;
+      }
+
+      if (isProtectedUrl(tab.url)) {
+        sendResponse({ error: 'Extension cannot scan protected browser pages (like chrome:// URLs).' });
+        return;
+      }
+
+      // Step 2: Inject content script dynamically
+      chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ['content.js']
+      })
+      .then(() => {
+        // Step 3: Request DOM extraction from the injected content script
+        chrome.tabs.sendMessage(tabId, { action: 'extract_dom_media' }, (domMedia) => {
+          // If message fails (e.g. content script didn't load in time), fall back to empty list
+          const domResults = domMedia || [];
+          const networkResults = tabMediaCache.get(tabId) || [];
+          
+          // Step 4: Merge and deduplicate results
+          const combined = mergeAndDeduplicate(domResults, networkResults);
+          
+          // Step 5: Enrich visible results with metadata (sizes)
+          enrichResults(combined).then(enriched => {
+            sendResponse({ results: enriched });
+          });
         });
+      })
+      .catch(err => {
+        console.error('Execution failed: ', err);
+        sendResponse({ error: 'Failed to scan page. Extension may not have access to this page.' });
       });
-    })
-    .catch(err => {
-      console.error('Execution failed: ', err);
-      sendResponse({ error: 'Failed to scan page. Extension may not have access to this page.' });
     });
 
     return true; // Keep message channel open for async response
@@ -131,7 +144,21 @@ async function enrichResults(results) {
           if (hlsType) {
             item.hlsType = hlsType; // 'master' or 'media'
             
-            // 3. Heuristic: If it's a media playlist, suggest a master URL
+            // 3. Duration Detection (New)
+            let duration = 0;
+            if (hlsType === 'media') {
+              duration = calculateHlsDuration(content);
+            } else if (hlsType === 'master') {
+              // For master, we need to fetch the first stream's playlist to get duration
+              const mediaUrl = resolveFirstStreamUrl(item.url, content);
+              if (mediaUrl) {
+                const mediaContent = await fetchHlsContent(mediaUrl);
+                if (mediaContent) duration = calculateHlsDuration(mediaContent);
+              }
+            }
+            if (duration > 0) item.duration = duration;
+
+            // 4. Heuristic: If it's a media playlist, suggest a master URL
             if (hlsType === 'media') {
               const suggestedMaster = suggestMasterUrl(item.url);
               if (suggestedMaster) {
@@ -140,12 +167,52 @@ async function enrichResults(results) {
             }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('HLS Enrich Error:', e);
+      }
     }
     return item;
   });
 
   return Promise.all(enrichmentPromises);
+}
+
+function calculateHlsDuration(manifestContent) {
+  let totalSeconds = 0;
+  const lines = manifestContent.split('\n');
+  for (const line of lines) {
+    if (line.startsWith('#EXTINF:')) {
+      const match = line.match(/#EXTINF:([\d\.]+)/);
+      if (match) {
+        totalSeconds += parseFloat(match[1]);
+      }
+    }
+  }
+  return totalSeconds;
+}
+
+function resolveFirstStreamUrl(masterUrl, masterContent) {
+  const lines = masterContent.split('\n');
+  let streamPath = null;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith('#EXT-X-STREAM-INF')) {
+      // The next non-comment line is usually the URL
+      for (let j = i + 1; j < lines.length; j++) {
+        if (lines[j].trim() && !lines[j].startsWith('#')) {
+          streamPath = lines[j].trim();
+          break;
+        }
+      }
+      if (streamPath) break;
+    }
+  }
+
+  if (streamPath) {
+    try {
+      return new URL(streamPath, masterUrl).href;
+    } catch (e) {}
+  }
+  return null;
 }
 
 async function fetchHlsContent(url) {
