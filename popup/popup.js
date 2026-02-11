@@ -53,8 +53,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     filtered.forEach((item, index) => {
       // Small delay between downloads to prevent browser issues
       setTimeout(() => {
+        const filename = getSuggestedFilename(item.url);
         chrome.downloads.download({
           url: item.url,
+          filename: filename,
           conflictAction: 'uniquify'
         });
       }, index * 200);
@@ -233,13 +235,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       });
 
-      // Action: Open
       clone.querySelector('.open-btn').addEventListener('click', () => {
         chrome.tabs.create({ url: item.url });
       });
 
+      // Action: Download
+      const downloadBtn = clone.querySelector('.download-btn');
+      downloadBtn.addEventListener('click', () => {
+        const filename = getSuggestedFilename(item.url);
+        chrome.downloads.download({
+          url: item.url,
+          filename: filename,
+          conflictAction: 'uniquify'
+        }, (downloadId) => {
+          if (chrome.runtime.lastError) {
+            console.error('Download error:', chrome.runtime.lastError);
+            return;
+          }
+          
+          const originalContent = downloadBtn.innerHTML;
+          downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>';
+          downloadBtn.style.color = 'var(--accent)';
+          downloadBtn.style.borderColor = 'var(--accent)';
+          
+          setTimeout(() => {
+            downloadBtn.innerHTML = originalContent;
+            downloadBtn.style.color = '';
+            downloadBtn.style.borderColor = '';
+          }, 1500);
+        });
+      });
+
       resultsList.appendChild(clone);
     });
+  }
+
+  function getSuggestedFilename(url) {
+    try {
+      const u = new URL(url);
+      let filename = u.pathname.split('/').pop();
+      if (!filename || filename.length < 3) {
+        filename = u.hostname.replace(/\./g, '_') + '.file';
+      }
+      // Remove query params if still attached to filename
+      filename = filename.split('?')[0].split('#')[0];
+      return filename;
+    } catch(e) {
+      return 'media_file';
+    }
   }
 
   function showError(msg) {
